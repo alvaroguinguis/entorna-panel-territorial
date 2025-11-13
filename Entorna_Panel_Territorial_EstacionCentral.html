@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Entorna – Panel Territorial Estación Central</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<style>
+  :root {
+    --negro: #000000;
+    --verde-agua: #00FFD5;
+    --verde-neon: #39FF14;
+  }
+  body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial; background: #fff; color: var(--negro);}
+  header { position: sticky; top: 0; z-index: 9999; background: #fff; border-bottom: 2px solid #eee; padding: 12px 16px; display:flex; align-items:center; justify-content:space-between;}
+  header h1 { margin: 0; font-size: 18px; letter-spacing: .2px; }
+  nav a { margin-left: 10px; padding: 8px 12px; border-radius: 999px; border: 1px solid #e5e7eb; text-decoration: none; color: #111; font-size: 13px;}
+  nav a.active, nav a:hover { border-color: var(--verde-agua); box-shadow: 0 0 0 2px rgba(0,255,213,.15) inset; }
+  .page { display: none; padding: 12px 16px 24px; max-width: 1200px; margin: 0 auto; }
+  .page.active { display: block; }
+  .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+  .card { grid-column: span 12; border: 1px solid #e5e7eb; border-radius: 16px; padding: 16px; box-shadow: 0 2px 10px rgba(0,0,0,.03);}
+  .card h2 { margin: 0 0 12px 0; font-size: 16px; }
+  #map { height: 520px; border-radius: 12px; }
+  .kpis { display:flex; gap:16px; flex-wrap: wrap; }
+  .kpi { flex: 1 1 180px; border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px; }
+  .kpi .v { font-size: 22px; font-weight: 700; }
+  .hint { font-size: 12px; color:#6b7280; }
+  footer { text-align:center; color:#6b7280; font-size:12px; padding: 20px 0 40px; }
+  .tag { background: #f3f4f6; padding:2px 8px; border-radius: 999px; font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Entorna – Panel Territorial Estación Central</h1>
+  <nav>
+    <a href="#entorno" class="active">Entorno</a>
+    <a href="#seguridad">Seguridad</a>
+    <a href="#mercado">Mercado</a>
+    <a href="#regulatorio">Regulatorio</a>
+    <a href="#comunidad">Comunidad</a>
+  </nav>
+</header>
+
+<section id="entorno" class="page active">
+  <div class="grid">
+    <div class="card" style="grid-column: span 6;">
+      <h2>Radar de entorno</h2>
+      <canvas id="radarEntorno" height="320"></canvas>
+      <div class="hint">Indicadores mock: Accesibilidad 0,78 · Equipamiento 0,85 · Áreas verdes 4,2 m²/hab</div>
+    </div>
+    <div class="card" style="grid-column: span 6;">
+      <h2>Mapa base + calor (1 km radio)</h2>
+      <div id="map"></div>
+      <div class="hint">Centro: Av. 5 de Abril 4534 · Estación Central</div>
+    </div>
+  </div>
+  <div class="kpis" style="margin-top:16px;">
+    <div class="kpi"><div class="hint">Accesibilidad</div><div class="v">0,78</div></div>
+    <div class="kpi"><div class="hint">Equipamiento</div><div class="v">0,85</div></div>
+    <div class="kpi"><div class="hint">Áreas verdes (m²/hab)</div><div class="v">4,2</div></div>
+  </div>
+</section>
+
+<section id="seguridad" class="page">
+  <div class="grid">
+    <div class="card" style="grid-column: span 12;">
+      <h2>Evolución de delitos 2021–2025</h2>
+      <canvas id="lineSeguridad" height="320"></canvas>
+      <div class="hint">Mock: robos −5 % (últimos 12m), hurtos +2 %.</div>
+    </div>
+  </div>
+</section>
+
+<section id="mercado" class="page">
+  <div class="grid">
+    <div class="card" style="grid-column: span 8;">
+      <h2>Precio suelo UF/m²</h2>
+      <canvas id="linePrecio" height="320"></canvas>
+    </div>
+    <div class="card" style="grid-column: span 4;">
+      <h2>Vacancia y absorción</h2>
+      <canvas id="barVacancia" height="320"></canvas>
+      <div class="hint">Vacancia ~10 % · Absorción ~10.000 m²/año</div>
+    </div>
+  </div>
+</section>
+
+<section id="regulatorio" class="page">
+  <div class="grid">
+    <div class="card" style="grid-column: span 6;">
+      <h2>Checklist de cumplimiento normativo</h2>
+      <table style="width:100%; border-collapse: collapse; font-size:14px;">
+        <thead>
+          <tr style="text-align:left; border-bottom:1px solid #e5e7eb;">
+            <th style="padding:8px;">Norma</th>
+            <th style="padding:8px;">Estado</th>
+            <th style="padding:8px;">Comentario</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="padding:8px;">Uso industrial permitido</td><td style="padding:8px;"><span class="tag">Cumple</span></td><td style="padding:8px;">Subzona L‑6(i)</td></tr>
+          <tr><td style="padding:8px;">Altura/coeficiente</td><td style="padding:8px;"><span class="tag">Parcial</span></td><td style="padding:8px;">Sujeto a incentivo</td></tr>
+          <tr><td style="padding:8px;">Aportes mitigación</td><td style="padding:8px;"><span class="tag">Cumple</span></td><td style="padding:8px;">Ejes locales</td></tr>
+          <tr><td style="padding:8px;">Estacionamientos</td><td style="padding:8px;"><span class="tag">No cumple</span></td><td style="padding:8px;">Revisar estándares</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card" style="grid-column: span 6;">
+      <h2>Índice de cumplimiento</h2>
+      <canvas id="doughCumple" height="320"></canvas>
+      <div class="hint">Mock: 80 % Cumple · 15 % Parcial · 5 % No cumple</div>
+    </div>
+  </div>
+</section>
+
+<section id="comunidad" class="page">
+  <div class="grid">
+    <div class="card" style="grid-column: span 6;">
+      <h2>Embudo de reclamos</h2>
+      <canvas id="funnelReclamos" height="320"></canvas>
+      <div class="hint">Reclamos activos 5 · En curso 2 · Cerrados 3</div>
+    </div>
+    <div class="card" style="grid-column: span 6;">
+      <h2>Timeline de compromisos</h2>
+      <ul>
+        <li><b>2025-05</b> – Reunión con JJVV Las Rejas (cerrado)</li>
+        <li><b>2025-07</b> – Medición ruido nocturno (en curso)</li>
+        <li><b>2025-09</b> – Mejora señalética peatonal (pendiente)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>© Entorna · Piloto demo (datos simulados)</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script>
+const links = document.querySelectorAll('nav a');
+const pages = document.querySelectorAll('.page');
+function activate(hash) {
+  links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === hash));
+  pages.forEach(p => p.classList.toggle('active', '#' + p.id === hash));
+}
+links.forEach(a => a.addEventListener('click', (e) => { e.preventDefault(); activate(a.getAttribute('href')); }));
+activate('#entorno');
+
+new Chart(document.getElementById('radarEntorno'), {
+  type: 'radar',
+  data: {
+    labels: ['Accesibilidad', 'Equipamiento', 'Áreas verdes'],
+    datasets: [{ label:'Índice', data:[0.78,0.85,0.42], borderColor:'#00FFD5', backgroundColor:'rgba(0,255,213,.15)', pointBackgroundColor:'#39FF14' }]
+  },
+  options: { responsive:true, scales: { r: { suggestedMin:0, suggestedMax:1 } }, plugins: { legend: { display:false } } }
+});
+
+new Chart(document.getElementById('lineSeguridad'), {
+  type: 'line',
+  data: {
+    labels: ['2021','2022','2023','2024','2025'],
+    datasets: [
+      { label:'Robos', data:[110,105,101,98,95], borderColor:'#39FF14', fill:false, tension:.25 },
+      { label:'Hurtos', data:[100,103,104,105,107], borderColor:'#00FFD5', fill:false, tension:.25 }
+    ]
+  },
+  options: { plugins: { legend: { position:'bottom' } } }
+});
+
+new Chart(document.getElementById('linePrecio'), {
+  type: 'line',
+  data: { labels:['2021','2022','2023','2024','2025'], datasets:[{ label:'UF/m²', data:[14,14.5,15,15.2,15.5], borderColor:'#000', fill:false, tension:.25 }] },
+  options: { plugins: { legend: { position:'bottom' } } }
+});
+
+new Chart(document.getElementById('barVacancia'), {
+  type: 'bar',
+  data: { labels:['Vacancia','Absorción (k m²/año)'], datasets:[{ label:'Indicador', data:[10,10], backgroundColor:['#00FFD5','#39FF14'] }] },
+  options: { plugins: { legend: { display:false } } }
+});
+
+new Chart(document.getElementById('doughCumple'), {
+  type: 'doughnut',
+  data: { labels:['Cumple','Parcial','No cumple'], datasets:[{ data:[80,15,5], backgroundColor:['#39FF14','#FFD84D','#FF5A5A'] }] },
+  options: { plugins: { legend: { position:'bottom' } } }
+});
+
+new Chart(document.getElementById('funnelReclamos'), {
+  type: 'bar',
+  data: { labels:['Reportados','En curso','Cerrados'], datasets:[{ data:[10,5,3], backgroundColor:['#00FFD5','#FFD84D','#39FF14'] }] },
+  options: { indexAxis:'y', plugins: { legend: { display:false } } }
+});
+
+// Leaflet map + heat
+const map = L.map('map').setView([-33.463, -70.71], 14);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
+L.circle([-33.463, -70.71], { radius: 1000, color: '#00FFD5', fillOpacity: 0.05 }).addTo(map);
+L.marker([-33.463, -70.71], {title:'Proyecto Bodegas Estación Central'}).addTo(map);
+
+function randomInRange(base, spread) { return base + (Math.random()-0.5)*spread; }
+const pts = [];
+for (let i=0; i<50; i++) {
+  const lat = randomInRange(-33.463, 0.02);
+  const lng = randomInRange(-70.71, 0.02);
+  const intensity = Math.random()*0.8 + 0.2;
+  pts.push([lat, lng, intensity]);
+}
+L.heatLayer(pts, { radius: 25, blur: 15, maxZoom: 17, gradient: {0.2:'#00FFD5',0.5:'#FFD84D',0.8:'#FF5A5A'} }).addTo(map);
+</script>
+</body>
+</html>
